@@ -42,26 +42,7 @@
         "CoreFoundation.framework"
       ],
       "minimumSystemVersion": "12.0",
-      "infoPlist": {
-        "NSScreenCaptureUsageDescription": "GiDuView requires Screen Recording permission to share your screen with remote viewers.",
-        "NSAccessibilityUsageDescription": "GiDuView requires Accessibility permission to allow remote control of mouse and keyboard.",
-        "NSHighResolutionCapable": true,
-        "LSUIElement": false
-      },
-      "dmg": {
-        "windowSize": {
-          "width": 660,
-          "height": 400
-        },
-        "appPosition": {
-          "x": 180,
-          "y": 170
-        },
-        "applicationFolderPosition": {
-          "x": 480,
-          "y": 170
-        }
-      }
+      "infoPlist": "Info.plist"
     }
   }
 }

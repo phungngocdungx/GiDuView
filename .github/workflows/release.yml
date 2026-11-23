@@ -29,32 +29,37 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin, x86_64-apple-darwin
+          targets: x86_64-apple-darwin, aarch64-apple-darwin
 
       - name: Install npm dependencies
         run: npm install
 
-      # 1. Build for Apple Silicon (M1/M2/M3/M4)
+      # 1. Build for Intel (x86_64)
+      - name: Build macOS Intel (x86_64)
+        run: |
+          mkdir -p artifacts
+          npx @tauri-apps/cli build --target x86_64-apple-darwin
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-x86_64.dmg || true
+          if [ -d "src-tauri/target/x86_64-apple-darwin/release/bundle/macos" ]; then
+            cd src-tauri/target/x86_64-apple-darwin/release/bundle/macos
+            zip -r ../../../../../artifacts/GiDuView-macos-x86_64.app.zip GiDuView.app
+            cd ../../../../..
+          fi
+
+      # 2. Build for Apple Silicon (ARM64)
       - name: Build macOS Apple Silicon (ARM64)
         run: |
           npx @tauri-apps/cli build --target aarch64-apple-darwin
-          mkdir -p artifacts
           cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-arm64.dmg || true
-          cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
-          zip -r ../../../../../artifacts/GiDuView-macos-arm64.app.zip GiDuView.app
-          cd ../../../../..
+          if [ -d "src-tauri/target/aarch64-apple-darwin/release/bundle/macos" ]; then
+            cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
+            zip -r ../../../../../artifacts/GiDuView-macos-arm64.app.zip GiDuView.app
+            cd ../../../../..
+          fi
 
-      # 2. Build for Intel (x86_64)
-      - name: Build macOS Intel (x86_64)
-        run: |
-          npx @tauri-apps/cli build --target x86_64-apple-darwin
-          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-x86_64.dmg || true
-          cd src-tauri/target/x86_64-apple-darwin/release/bundle/macos
-          zip -r ../../../../../artifacts/GiDuView-macos-x86_64.app.zip GiDuView.app
-          cd ../../../../..
-
-      # 3. Build Universal Binary (runs natively on both Intel & Apple Silicon)
+      # 3. Build Universal Binary (if supported)
       - name: Build macOS Universal Binary
+        continue-on-error: true
         run: |
           npx @tauri-apps/cli build --target universal-apple-darwin || true
           if [ -d "src-tauri/target/universal-apple-darwin/release/bundle/dmg" ]; then
@@ -75,14 +80,12 @@ jobs:
             Ứng dụng điều khiển từ xa native cho macOS, tương thích giao thức UltraViewer.
 
             #### 📦 Tệp tải về:
-            - **Apple Silicon (M1/M2/M3/M4)**: 
-              - `GiDuView-macos-arm64.dmg` (Bản cài đặt kéo thả)
-              - `GiDuView-macos-arm64.app.zip` (Bản nén chạy trực tiếp)
             - **Intel (x86_64)**:
-              - `GiDuView-macos-x86_64.dmg` (Bản cài đặt kéo thả)
-              - `GiDuView-macos-x86_64.app.zip` (Bản nén chạy trực tiếp)
-            - **Universal (Hỗ trợ cả 2)**:
-              - `GiDuView-macos-universal.dmg`
+              - `GiDuView-macos-x86_64.dmg` (Bản cài đặt kéo thả DMG cho Mac chip Intel)
+              - `GiDuView-macos-x86_64.app.zip` (Bản zip file `.app` chạy trực tiếp)
+            - **Apple Silicon (M1/M2/M3/M4)**: 
+              - `GiDuView-macos-arm64.dmg` (Bản cài đặt kéo thả DMG cho Mac chip Apple Silicon)
+              - `GiDuView-macos-arm64.app.zip` (Bản zip file `.app` chạy trực tiếp)
 
             #### ✨ Tính năng nổi bật:
             - Chụp màn hình siêu mượt với **ScreenCaptureKit** và **CoreGraphics** (hỗ trợ màn hình Retina và độ phân giải 4K 60 FPS).
