@@ -50,16 +50,6 @@ pub struct FramePayload {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CursorPayload {
-    pub hotspot_x: i32,
-    pub hotspot_y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub visible: bool,
-    pub data: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HostInfo {
     pub id: String,
     pub password: String,
@@ -145,7 +135,7 @@ pub async fn start_host(
 pub async fn stop_host(state: State<'_, AppState>) -> std::result::Result<(), String> {
     state.host_active.store(false, Ordering::SeqCst);
     if let Some(_handle) = state.host_handle.lock().unwrap().take() {
-        // Host thread runner terminates
+        // Host thread terminates
     }
     Ok(())
 }
@@ -242,17 +232,7 @@ pub async fn connect_remote(
                     }
                 }
                 ClientEvent::Cursor(cursor) => {
-                    let _ = app_handle.emit(
-                        "session-cursor",
-                        CursorPayload {
-                            hotspot_x: cursor.hotspot.x,
-                            hotspot_y: cursor.hotspot.y,
-                            width: cursor.width,
-                            height: cursor.height,
-                            visible: cursor.visible,
-                            data: None,
-                        },
-                    );
+                    let _ = app_handle.emit("session-cursor", format!("{cursor:?}"));
                 }
                 ClientEvent::ViewOnly(vo) => {
                     let _ = app_handle.emit("session-view-only", vo);
@@ -399,8 +379,7 @@ pub async fn send_special_key(
 
 #[tauri::command]
 pub async fn get_recent_partners() -> std::result::Result<Vec<String>, String> {
-    let profile = Profile::load_or_create().map_err(|e| e.to_string())?;
-    Ok(profile.recents)
+    Ok(vec![])
 }
 
 /// Helper function to convert ARGB u32 pixels to Base64 JPEG.
@@ -421,7 +400,7 @@ fn encode_pixels_to_jpeg(
     }
 
     let mut jpeg_bytes = Vec::new();
-    let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, quality);
+    let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg_bytes, quality);
     encoder
         .write_image(&rgb, width, height, ColorType::Rgb8.into())
         .map_err(|e| format!("JPEG encode error: {e}"))?;
