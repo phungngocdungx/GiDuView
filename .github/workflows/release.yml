@@ -37,24 +37,24 @@ jobs:
       # 1. Build for Intel (x86_64)
       - name: Build macOS Intel (x86_64)
         run: |
-          mkdir -p artifacts
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
           npx @tauri-apps/cli build --target x86_64-apple-darwin
-          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-x86_64.dmg || true
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg "$GITHUB_WORKSPACE/artifacts/GiDuView-macos-x86_64.dmg" || true
           if [ -d "src-tauri/target/x86_64-apple-darwin/release/bundle/macos" ]; then
             cd src-tauri/target/x86_64-apple-darwin/release/bundle/macos
-            zip -r ../../../../../artifacts/GiDuView-macos-x86_64.app.zip GiDuView.app
-            cd ../../../../..
+            zip -r "$GITHUB_WORKSPACE/artifacts/GiDuView-macos-x86_64.app.zip" GiDuView.app
+            cd "$GITHUB_WORKSPACE"
           fi
 
       # 2. Build for Apple Silicon (ARM64)
       - name: Build macOS Apple Silicon (ARM64)
         run: |
           npx @tauri-apps/cli build --target aarch64-apple-darwin
-          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-arm64.dmg || true
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg "$GITHUB_WORKSPACE/artifacts/GiDuView-macos-arm64.dmg" || true
           if [ -d "src-tauri/target/aarch64-apple-darwin/release/bundle/macos" ]; then
             cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
-            zip -r ../../../../../artifacts/GiDuView-macos-arm64.app.zip GiDuView.app
-            cd ../../../../..
+            zip -r "$GITHUB_WORKSPACE/artifacts/GiDuView-macos-arm64.app.zip" GiDuView.app
+            cd "$GITHUB_WORKSPACE"
           fi
 
       # 3. Build Universal Binary (if supported)
@@ -63,11 +63,11 @@ jobs:
         run: |
           npx @tauri-apps/cli build --target universal-apple-darwin || true
           if [ -d "src-tauri/target/universal-apple-darwin/release/bundle/dmg" ]; then
-            cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-universal.dmg || true
+            cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg "$GITHUB_WORKSPACE/artifacts/GiDuView-macos-universal.dmg" || true
           fi
 
       - name: List Artifacts
-        run: ls -la artifacts/
+        run: ls -la "$GITHUB_WORKSPACE/artifacts/"
 
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v2
