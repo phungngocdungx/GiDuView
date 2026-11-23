@@ -24,15 +24,7 @@ macro_rules! key_codes {
             }
         }
 
-        #[cfg(feature = "winit")]
-        impl From<winit::keyboard::KeyCode> for KeyCode {
-            fn from(code: winit::keyboard::KeyCode) -> KeyCode {
-                match code {
-                    $(winit::keyboard::KeyCode::$key => KeyCode::$key,)*
-                    _ => KeyCode::Other,
-                }
-            }
-        }
+
     };
 }
 

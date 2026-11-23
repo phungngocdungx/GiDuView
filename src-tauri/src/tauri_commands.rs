@@ -83,8 +83,16 @@ pub async fn request_permissions(permission: String) -> std::result::Result<bool
 pub async fn get_host_info(state: State<'_, AppState>) -> std::result::Result<HostInfo, String> {
     let profile = Profile::load_or_create_host().map_err(|e| e.to_string())?;
     let is_hosting = state.host_active.load(Ordering::SeqCst);
+    let id = match crate::command::CommandConnection::register(&profile.registration) {
+        Ok(cmd) => {
+            let id = cmd.id().to_string();
+            cmd.sender().shutdown();
+            id
+        }
+        Err(_) => profile.registration.mac_address.chars().take(8).collect(),
+    };
     Ok(HostInfo {
-        id: profile.registration.id.to_string(),
+        id,
         password: profile.registration.password,
         is_hosting,
     })
@@ -95,17 +103,12 @@ pub async fn start_host(
     state: State<'_, AppState>,
     app: AppHandle,
 ) -> std::result::Result<HostInfo, String> {
+    let info = get_host_info(state.clone()).await?;
     if state.host_active.load(Ordering::SeqCst) {
-        return get_host_info(state).await;
+        return Ok(info);
     }
 
     let profile = Profile::load_or_create_host().map_err(|e| e.to_string())?;
-    let info = HostInfo {
-        id: profile.registration.id.to_string(),
-        password: profile.registration.password.clone(),
-        is_hosting: true,
-    };
-
     state.host_active.store(true, Ordering::SeqCst);
     let host_active = state.host_active.clone();
     let app_handle = app.clone();
