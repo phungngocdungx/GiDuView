@@ -145,7 +145,7 @@ pub async fn start_host(
 pub async fn stop_host(state: State<'_, AppState>) -> std::result::Result<(), String> {
     state.host_active.store(false, Ordering::SeqCst);
     if let Some(_handle) = state.host_handle.lock().unwrap().take() {
-        // Runner checks flag and terminates
+        // Host thread runner terminates
     }
     Ok(())
 }
@@ -194,7 +194,7 @@ pub async fn connect_remote(
     .map_err(|e| e.to_string())?;
 
     let session_screen = session_res.screen.clone();
-    let partner_version = session_res.partner_version().to_string();
+    let partner_version = session_res.partner_version();
     *state.client.lock().unwrap() = Some(session_res);
 
     let supports_binary = input::supports_binary_keyboard(&partner_version);
@@ -293,7 +293,7 @@ pub async fn send_mouse_move(
     let guard = state.client.lock().unwrap();
     if let Some(session) = guard.as_ref() {
         let payload = input::mouse_move(wparam, x, y);
-        let _ = session.send_peer(&payload);
+        session.send_input(payload);
     }
     Ok(())
 }
@@ -311,7 +311,7 @@ pub async fn send_mouse_button(
     let guard = state.client.lock().unwrap();
     if let Some(session) = guard.as_ref() {
         let payload = input::mouse_button(msg, wparam, lparam);
-        let _ = session.send_peer(&payload);
+        session.send_input(payload);
     }
     Ok(())
 }
@@ -330,9 +330,9 @@ pub async fn send_mouse_wheel(
     let guard = state.client.lock().unwrap();
     if let Some(session) = guard.as_ref() {
         let wparam = input::wheel_wparam(delta, key_flags);
-        let lparam = input::pack_position(x, y);
-        let payload = input::mouse_button(input::WM_MOUSEWHEEL, wparam, lparam);
-        let _ = session.send_peer(&payload);
+        let lparam = input::packed_position(x as i16, y as i16);
+        let payload = input::mouse_wheel(wparam, lparam);
+        session.send_input(payload);
     }
     Ok(())
 }
@@ -350,12 +350,10 @@ pub async fn send_key_event(
     let guard = state.client.lock().unwrap();
     if let Some(session) = guard.as_ref() {
         let key_code = KeyCode::from_name(&code).unwrap_or(KeyCode::Other);
-        let text_char = text.as_ref().and_then(|t| t.chars().next());
-
         let mut enc = state.encoder.lock().unwrap();
-        let payloads = enc.key(key_code, pressed, text_char);
+        let payloads = enc.key(key_code, pressed, text.as_deref());
         for p in payloads {
-            let _ = session.send_peer(&p);
+            session.send_input(p);
         }
     }
     Ok(())
@@ -367,10 +365,6 @@ pub async fn set_view_only(
     state: State<'_, AppState>,
 ) -> std::result::Result<(), String> {
     state.view_only.store(view_only, Ordering::SeqCst);
-    let guard = state.client.lock().unwrap();
-    if let Some(session) = guard.as_ref() {
-        session.set_view_only(view_only);
-    }
     Ok(())
 }
 
@@ -386,15 +380,15 @@ pub async fn send_special_key(
     if let Some(session) = guard.as_ref() {
         match action.as_str() {
             "ctrl_alt_del" => {
-                let _ = session.send_peer(&format!("41|||1").into_bytes());
+                session.send_input(b"41|||1".to_vec());
             }
             "win_key" => {
                 let mut enc = state.encoder.lock().unwrap();
                 for p in enc.key(KeyCode::SuperLeft, true, None) {
-                    let _ = session.send_peer(&p);
+                    session.send_input(p);
                 }
                 for p in enc.key(KeyCode::SuperLeft, false, None) {
-                    let _ = session.send_peer(&p);
+                    session.send_input(p);
                 }
             }
             _ => {}
