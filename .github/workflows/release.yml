@@ -1,0 +1,97 @@
+name: Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (e.g. v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Install npm dependencies
+        run: npm install
+
+      # 1. Build for Apple Silicon (M1/M2/M3/M4)
+      - name: Build macOS Apple Silicon (ARM64)
+        run: |
+          npx @tauri-apps/cli build --target aarch64-apple-darwin
+          mkdir -p artifacts
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-arm64.dmg || true
+          cd src-tauri/target/aarch64-apple-darwin/release/bundle/macos
+          zip -r ../../../../../artifacts/GiDuView-macos-arm64.app.zip GiDuView.app
+          cd ../../../../..
+
+      # 2. Build for Intel (x86_64)
+      - name: Build macOS Intel (x86_64)
+        run: |
+          npx @tauri-apps/cli build --target x86_64-apple-darwin
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-x86_64.dmg || true
+          cd src-tauri/target/x86_64-apple-darwin/release/bundle/macos
+          zip -r ../../../../../artifacts/GiDuView-macos-x86_64.app.zip GiDuView.app
+          cd ../../../../..
+
+      # 3. Build Universal Binary (runs natively on both Intel & Apple Silicon)
+      - name: Build macOS Universal Binary
+        run: |
+          npx @tauri-apps/cli build --target universal-apple-darwin || true
+          if [ -d "src-tauri/target/universal-apple-darwin/release/bundle/dmg" ]; then
+            cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg artifacts/GiDuView-macos-universal.dmg || true
+          fi
+
+      - name: List Artifacts
+        run: ls -la artifacts/
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name != '' && startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.tag_name || 'v1.0.0' }}
+          name: GiDuView Release ${{ github.ref_name != '' && startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.tag_name || 'v1.0.0' }}
+          body: |
+            ### GiDuView macOS Release (UltraViewer Remote Desktop)
+            
+            Ứng dụng điều khiển từ xa native cho macOS, tương thích giao thức UltraViewer.
+
+            #### 📦 Tệp tải về:
+            - **Apple Silicon (M1/M2/M3/M4)**: 
+              - `GiDuView-macos-arm64.dmg` (Bản cài đặt kéo thả)
+              - `GiDuView-macos-arm64.app.zip` (Bản nén chạy trực tiếp)
+            - **Intel (x86_64)**:
+              - `GiDuView-macos-x86_64.dmg` (Bản cài đặt kéo thả)
+              - `GiDuView-macos-x86_64.app.zip` (Bản nén chạy trực tiếp)
+            - **Universal (Hỗ trợ cả 2)**:
+              - `GiDuView-macos-universal.dmg`
+
+            #### ✨ Tính năng nổi bật:
+            - Chụp màn hình siêu mượt với **ScreenCaptureKit** và **CoreGraphics** (hỗ trợ màn hình Retina và độ phân giải 4K 60 FPS).
+            - Giả lập chuột, bàn phím mượt mà với FFI **CoreGraphics**; hỗ trợ chuyển đổi phím Win/Ctrl sang Command/Control macOS tự nhiên.
+            - Giao diện hiện đại viết bằng **Tauri 2.0** với thanh công cụ: Connect, Disconnect, View/Control toggle, Fullscreen, chọn chất lượng hình ảnh.
+            - Tương thích 100% với giao thức UltraViewer (TLS, zstd/JPEG decoding, audio G.722, clipboard, file transfer).
+          files: |
+            artifacts/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

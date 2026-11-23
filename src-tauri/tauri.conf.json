@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "GiDuView",
+  "version": "1.0.0",
+  "identifier": "com.giduview.app",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "../src"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "GiDuView",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 900,
+        "minHeight": 650,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "frameworks": [
+        "ScreenCaptureKit.framework",
+        "CoreGraphics.framework",
+        "ApplicationServices.framework",
+        "CoreFoundation.framework"
+      ],
+      "minimumSystemVersion": "12.0",
+      "infoPlist": {
+        "NSScreenCaptureUsageDescription": "GiDuView requires Screen Recording permission to share your screen with remote viewers.",
+        "NSAccessibilityUsageDescription": "GiDuView requires Accessibility permission to allow remote control of mouse and keyboard.",
+        "NSHighResolutionCapable": true,
+        "LSUIElement": false
+      },
+      "dmg": {
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        }
+      }
+    }
+  }
+}

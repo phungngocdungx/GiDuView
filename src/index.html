@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiDuView - Remote Desktop</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Top App Navigation / Tab Switcher -->
+    <header class="app-header">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <span class="logo-text">GiDuView <span class="tag">macOS</span></span>
+      </div>
+
+      <nav class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-tab="tab-client">Remote Control</button>
+        <button class="nav-tab" data-tab="tab-host">Share This Mac</button>
+        <button class="nav-tab" data-tab="tab-permissions">Permissions</button>
+      </nav>
+
+      <div class="header-status" id="header-status">
+        <span class="status-dot"></span>
+        <span class="status-label">Ready</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- TAB 1: REMOTE CLIENT -->
+      <section id="tab-client" class="tab-pane active">
+        <div class="connect-card">
+          <div class="card-header">
+            <h2>Connect to Remote Computer</h2>
+            <p>Control a remote Windows or macOS computer using UltraViewer protocol</p>
+          </div>
+
+          <form id="connect-form" class="connect-form">
+            <div class="form-group">
+              <label for="partner-id">Partner ID</label>
+              <div class="input-wrapper">
+                <input type="text" id="partner-id" placeholder="e.g. 12 345 678" required autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="partner-password">Partner Password</label>
+              <div class="input-wrapper">
+                <input type="password" id="partner-password" placeholder="Enter remote password" required autocomplete="off">
+                <button type="button" class="btn-icon" id="toggle-password-visibility" title="Show/Hide Password">👁</button>
+              </div>
+            </div>
+
+            <div class="form-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="opt-view-only">
+                <span>View only mode (disable remote control)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="opt-clipboard" checked>
+                <span>Synchronize clipboard</span>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-connect">
+                <span class="btn-text">Connect to Partner</span>
+                <span class="spinner" style="display: none;"></span>
+              </button>
+            </div>
+          </form>
+
+          <div class="recent-partners-section">
+            <h3>Recent Connections</h3>
+            <div id="recent-list" class="recent-list">
+              <div class="empty-hint">No recent connections found.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: HOSTING -->
+      <section id="tab-host" class="tab-pane">
+        <div class="host-card">
+          <div class="card-header">
+            <h2>Allow Remote Control</h2>
+            <p>Give your partner your ID and Password so they can connect to this Mac</p>
+          </div>
+
+          <div class="credentials-box">
+            <div class="cred-row">
+              <span class="cred-label">Your ID</span>
+              <div class="cred-value-wrap">
+                <span class="cred-value" id="host-id">Loading...</span>
+                <button class="btn-copy" id="btn-copy-id" title="Copy ID">Copy</button>
+              </div>
+            </div>
+
+            <div class="cred-row">
+              <span class="cred-label">Password</span>
+              <div class="cred-value-wrap">
+                <span class="cred-value" id="host-password">••••••</span>
+                <button class="btn-copy" id="btn-copy-pw" title="Copy Password">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="host-controls">
+            <button class="btn btn-success" id="btn-toggle-host">
+              <span id="host-btn-label">Start Screen Sharing</span>
+            </button>
+            <div class="host-live-indicator" id="host-live-indicator" style="display: none;">
+              <span class="pulse-dot"></span>
+              <span>Hosting Active (ScreenCaptureKit running)</span>
+            </div>
+          </div>
+
+          <div class="host-hint-box">
+            <h4>💡 High Performance Engine</h4>
+            <p>GiDuView uses native <strong>ScreenCaptureKit</strong> and <strong>CoreGraphics</strong> for ultra-low latency 60 FPS streaming with 4K and Retina display support.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PERMISSIONS -->
+      <section id="tab-permissions" class="tab-pane">
+        <div class="permissions-card">
+          <div class="card-header">
+            <h2>macOS System Permissions</h2>
+            <p>To share your screen and allow remote control, macOS requires user authorization</p>
+          </div>
+
+          <div class="permission-item" id="perm-screen-item">
+            <div class="perm-info">
+              <div class="perm-title">Screen Recording</div>
+              <div class="perm-desc">Required to capture this Mac's screen using ScreenCaptureKit</div>
+            </div>
+            <div class="perm-action">
+              <span class="badge" id="badge-screen">Checking...</span>
+              <button class="btn btn-secondary btn-sm" id="btn-req-screen">Grant Access</button>
+            </div>
+          </div>
+
+          <div class="permission-item" id="perm-input-item">
+            <div class="perm-info">
+              <div class="perm-title">Accessibility</div>
+              <div class="perm-desc">Required to simulate mouse clicks, movements, and keyboard input</div>
+            </div>
+            <div class="perm-action">
+              <span class="badge" id="badge-input">Checking...</span>
+              <button class="btn btn-secondary btn-sm" id="btn-req-input">Grant Access</button>
+            </div>
+          </div>
+
+          <div class="permission-refresh">
+            <button class="btn btn-outline btn-sm" id="btn-refresh-perms">Refresh Permissions Status</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- LIVE SESSION OVERLAY / VIEWPORT -->
+    <div id="session-overlay" class="session-overlay" style="display: none;">
+      <!-- Floating Session Toolbar -->
+      <nav class="session-toolbar" id="session-toolbar">
+        <div class="toolbar-drag-handle">⠿</div>
+        
+        <div class="toolbar-info">
+          <span class="toolbar-partner-id" id="session-partner-display">123 456 789</span>
+          <span class="toolbar-res" id="session-res-display">1920x1080</span>
+        </div>
+
+        <div class="toolbar-actions">
+          <!-- View / Control Toggle -->
+          <button class="toolbar-btn" id="tb-btn-control" title="Toggle View/Control Mode">
+            <span class="tb-icon" id="tb-icon-control">🎮</span>
+            <span class="tb-label" id="tb-label-control">Control</span>
+          </button>
+
+          <!-- Quality Selector -->
+          <div class="toolbar-dropdown">
+            <select id="tb-quality-select" title="Image Quality">
+              <option value="ultra">4K Ultra</option>
+              <option value="high" selected>High (1080p)</option>
+              <option value="balanced">Balanced</option>
+              <option value="low">Low Bandwidth</option>
+            </select>
+          </div>
+
+          <!-- Special Keys -->
+          <button class="toolbar-btn" id="tb-btn-cad" title="Send Ctrl+Alt+Del">
+            <span class="tb-icon">⌨️</span>
+            <span class="tb-label">Ctrl+Alt+Del</span>
+          </button>
+
+          <!-- Fullscreen Toggle -->
+          <button class="toolbar-btn" id="tb-btn-fullscreen" title="Toggle Fullscreen">
+            <span class="tb-icon">⛶</span>
+            <span class="tb-label">Fullscreen</span>
+          </button>
+
+          <!-- Disconnect Button -->
+          <button class="toolbar-btn btn-danger" id="tb-btn-disconnect" title="Disconnect Session">
+            <span class="tb-icon">✕</span>
+            <span class="tb-label">Disconnect</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Viewport Canvas Container -->
+      <div class="canvas-container" id="canvas-container">
+        <canvas id="remote-canvas" tabindex="0"></canvas>
+      </div>
+
+      <!-- Connecting / Loading overlay -->
+      <div id="session-loading" class="session-loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="session-loading-text">Connecting to remote desktop...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
